@@ -88,7 +88,9 @@ export class UnisatWallet extends WalletProvider {
   }
 
   async switchNetwork(network: Network) {
-    return await this.bitcoinNetworkProvider.switchNetwork(network)
+    return await this.bitcoinNetworkProvider.switchNetwork(
+      network.replace('mainnet', 'livenet')
+    )
   }
 
   async sendBitcoin(to: string, satAmount: number) {

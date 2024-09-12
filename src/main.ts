@@ -8,12 +8,13 @@ import keystoneIcon from './icons/keystone.svg'
 import binanceIcon from './icons/binance.webp'
 import { OKXWallet } from './providers/okx_wallet'
 import { UnisatWallet } from './providers/unisat_wallet'
+import { TomoWallet } from './providers/tomo_wallet'
 import { BitgetWallet } from './providers/bitget_wallet'
 import { OneKeyWallet } from './providers/onekey_wallet'
 import { ImTokenWallet } from './providers/imtoken_wallet'
 import { KeystoneWallet } from './providers/keystone'
 import { BinanceWallet } from './providers/binance_wallet'
-import { TomoWallet } from './providers/tomo_wallet'
+import { WalletProvider } from './wallet_provider'
 
 type TomoWalletType = 'extension' | 'qrcode' | 'injected'
 
@@ -22,8 +23,7 @@ type TomoWallet = {
   img: string
   name: string
   chainType: string
-  connectProvider?: any
-  wId?: string,
+  connectProvider?: WalletProvider
   type: TomoWalletType
 }
 
@@ -95,3 +95,6 @@ export const walletList: TomoWallet[] = [
     type: 'injected'
   }
 ]
+
+export * from './wallet_provider'
+export * from './utils/parseUnits'

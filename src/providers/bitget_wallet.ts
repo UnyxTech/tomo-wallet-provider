@@ -50,8 +50,7 @@ export class BitgetWallet extends WalletProvider {
   }
 
   getAddress = async (): Promise<string> => {
-    let accounts = (await this.bitcoinNetworkProvider.getAccounts()) || []
-    console.log('accounts', accounts)
+    const accounts = (await this.bitcoinNetworkProvider.getAccounts()) || []
     if (!accounts?.[0]) {
       throw new Error('Bitget Wallet not connected')
     }
@@ -59,7 +58,7 @@ export class BitgetWallet extends WalletProvider {
   }
 
   getPublicKeyHex = async (): Promise<string> => {
-    let publicKey = await this.bitcoinNetworkProvider.getPublicKey()
+    const publicKey = await this.bitcoinNetworkProvider.getPublicKey()
     if (!publicKey) {
       throw new Error('Bitget Wallet not connected')
     }
