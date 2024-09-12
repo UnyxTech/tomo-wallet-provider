@@ -1,5 +1,6 @@
 import { Inscription, Network, WalletProvider } from '../wallet_provider'
 import { parseUnits } from '../utils/parseUnits'
+import { getAddressBalance } from 'mempool_api'
 
 const INTERNAL_NETWORK_NAMES = {
   [Network.MAINNET]: 'livenet',
@@ -104,7 +105,10 @@ export class BitgetWallet extends WalletProvider {
   }
 
   getBalance = async (): Promise<number> => {
-    return (await this.bitcoinNetworkProvider.getBalance()).total
+    return await getAddressBalance(
+      await this.getNetwork(),
+      await this.getAddress()
+    )
   }
 
   pushTx = async (txHex: string): Promise<string> => {
