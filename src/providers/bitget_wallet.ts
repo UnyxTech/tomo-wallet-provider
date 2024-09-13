@@ -1,6 +1,6 @@
 import { Inscription, Network, WalletProvider } from '../wallet_provider'
 import { parseUnits } from '../utils/parseUnits'
-import { getAddressBalance } from 'mempool_api'
+import { getAddressBalance } from '../mempool_api'
 
 const INTERNAL_NETWORK_NAMES = {
   [Network.MAINNET]: 'livenet',
