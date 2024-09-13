@@ -110,14 +110,7 @@ export class KeystoneWallet extends WalletProvider {
 
     // generate the address and public key based on the xpub
     const curentNetwork = await this.getNetwork()
-    const { address, pubkeyHex, scriptPubKeyHex } = generateP2trAddressFromXpub(
-      this.keystoneWaleltInfo.extendedPublicKey,
-      'M/0/0',
-      toNetwork(curentNetwork)
-    )
-    this.keystoneWaleltInfo.address = address
-    this.keystoneWaleltInfo.publicKeyHex = pubkeyHex
-    this.keystoneWaleltInfo.scriptPubKeyHex = scriptPubKeyHex
+    await this.switchNetwork(curentNetwork)
     return this
   }
 
@@ -262,7 +255,14 @@ export class KeystoneWallet extends WalletProvider {
   }
 
   async switchNetwork(network: Network) {
-    throw new Error('Method not implemented.')
+    const { address, pubkeyHex, scriptPubKeyHex } = generateP2trAddressFromXpub(
+      this.keystoneWaleltInfo.extendedPublicKey,
+      'M/0/0',
+      toNetwork(network)
+    )
+    this.keystoneWaleltInfo.address = address
+    this.keystoneWaleltInfo.publicKeyHex = pubkeyHex
+    this.keystoneWaleltInfo.scriptPubKeyHex = scriptPubKeyHex
   }
 
   getInscriptions(): Promise<Inscription[]> {
