@@ -255,6 +255,7 @@ export class KeystoneWallet extends WalletProvider {
   }
 
   async switchNetwork(network: Network) {
+    this.networkEnv = network
     const { address, pubkeyHex, scriptPubKeyHex } = generateP2trAddressFromXpub(
       this.keystoneWaleltInfo.extendedPublicKey,
       'M/0/0',
