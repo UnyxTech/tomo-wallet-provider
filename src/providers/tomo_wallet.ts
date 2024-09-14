@@ -1,5 +1,6 @@
 import {
   Inscription,
+  InscriptionResult,
   Network,
   WalletInfo,
   WalletProvider
@@ -130,7 +131,39 @@ export class TomoWallet extends WalletProvider {
     )
     return result
   }
-  getInscriptions(): Promise<Inscription[]> {
+  async getInscriptions(
+    cursor?: number,
+    size?: number
+  ): Promise<InscriptionResult> {
     throw new Error('Method not implemented.')
+
+    // const result = await this.bitcoinNetworkProvider.getInscriptions(
+    //   cursor,
+    //   size
+    // )
+    // return {
+    //   list: result.list.reduce((list: Inscription[], item: any) => {
+    //     item.inscriptions.forEach((inscription: any) => {
+    //       list.push({
+    //         ...inscription,
+    //         output: null,
+    //         inscriptionId: inscription.inscriptionId,
+    //         address: item.inscriptionId,
+    //         offset: inscription.offset,
+    //         outputValue: null,
+    //         location: null,
+    //         contentType: null,
+    //         contentLength: null,
+    //         inscriptionNumber: inscription.inscriptionNumber,
+    //         timestamp: null,
+    //         genesisTransaction: null
+    //       })
+    //     })
+    //     return list
+    //   }, [] as Inscription[]),
+    //   total: result.list.reduce((count: number, item: any) => {
+    //     return count + item.inscriptions.length
+    //   }, 0)
+    // }
   }
 }

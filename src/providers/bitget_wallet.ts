@@ -1,4 +1,4 @@
-import { Inscription, Network, WalletProvider } from '../wallet_provider'
+import { InscriptionResult, Network, WalletProvider } from '../wallet_provider'
 import { parseUnits } from '../utils/parseUnits'
 import { getAddressBalance } from '../mempool_api'
 
@@ -128,7 +128,10 @@ export class BitgetWallet extends WalletProvider {
     )
     return result
   }
-  getInscriptions(): Promise<Inscription[]> {
-    throw new Error('Method not implemented.')
+  async getInscriptions(
+    cursor?: number,
+    size?: number
+  ): Promise<InscriptionResult> {
+    return await this.bitcoinNetworkProvider.getInscriptions(cursor, size)
   }
 }

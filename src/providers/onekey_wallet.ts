@@ -1,5 +1,6 @@
 import {
   Inscription,
+  InscriptionResult,
   Network,
   WalletInfo,
   WalletProvider
@@ -122,7 +123,7 @@ export class OneKeyWallet extends WalletProvider {
     )
     return result
   }
-  getInscriptions(): Promise<Inscription[]> {
+  getInscriptions(cursor?: number, size?: number): Promise<InscriptionResult> {
     throw new Error('Method not implemented.')
   }
 }

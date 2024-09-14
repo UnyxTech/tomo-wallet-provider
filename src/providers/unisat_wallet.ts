@@ -1,5 +1,5 @@
 import {
-  Inscription,
+  InscriptionResult,
   Network,
   WalletInfo,
   WalletProvider
@@ -117,7 +117,10 @@ export class UnisatWallet extends WalletProvider {
   pushTx = async (txHex: string): Promise<string> => {
     return await this.bitcoinNetworkProvider.pushTx(txHex)
   }
-  getInscriptions(): Promise<Inscription[]> {
-    throw new Error('Method not implemented.')
+  async getInscriptions(
+    cursor?: number,
+    size?: number
+  ): Promise<InscriptionResult> {
+    return await this.bitcoinNetworkProvider.getInscriptions(cursor, size)
   }
 }

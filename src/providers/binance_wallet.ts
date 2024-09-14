@@ -1,5 +1,5 @@
 import {
-  Inscription,
+  InscriptionResult,
   Network,
   WalletInfo,
   WalletProvider
@@ -9,7 +9,6 @@ import { Psbt } from 'bitcoinjs-lib'
 import { parseUnits } from '../utils/parseUnits'
 import { toNetwork } from '../config/network.config'
 import { initBTCEccLib } from '../utils/eccLibUtils'
-import * as net from 'node:net'
 
 export class BinanceWallet extends WalletProvider {
   private walletInfo: WalletInfo | undefined
@@ -97,7 +96,7 @@ export class BinanceWallet extends WalletProvider {
     return await this.bitcoinNetworkProvider.getBalance(await this.getAddress())
   }
 
-  getInscriptions(): Promise<Inscription[]> {
+  getInscriptions(cursor?: number, size?: number): Promise<InscriptionResult> {
     throw new Error('Method not implemented.')
   }
 

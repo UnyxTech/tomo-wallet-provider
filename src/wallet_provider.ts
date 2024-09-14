@@ -31,9 +31,23 @@ export interface UTXO {
   scriptPubKey: string
 }
 
+export interface InscriptionResult {
+  list: Inscription[]
+  total: number
+}
+
 export interface Inscription {
-  // output of the inscription in the format of `txid:vout`
   output: string
+  inscriptionId: string
+  address: string
+  offset: number
+  outputValue: number
+  location: string
+  contentType: string
+  contentLength: number
+  inscriptionNumber: number
+  timestamp: number
+  genesisTransaction: string
 }
 
 // supported networks
@@ -127,7 +141,10 @@ export abstract class WalletProvider {
    * Retrieves the inscriptions for the connected wallet.
    * @returns A promise that resolves to an array of inscriptions.
    */
-  abstract getInscriptions(): Promise<Inscription[]>
+  abstract getInscriptions(
+    cursor?: number,
+    size?: number
+  ): Promise<InscriptionResult>
 
   /**
    * Retrieves the network fees.
