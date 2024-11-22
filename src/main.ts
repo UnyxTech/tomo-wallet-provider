@@ -28,6 +28,7 @@ import { BitgetCosmosWallet } from './providers/cosmos/BitgetCosmosWallet'
 import { OneKeyCosmosWallet } from './providers/cosmos/OneKeyCosmosWallet'
 import { StationCosmosWallet } from './providers/cosmos/StationCosmosWallet'
 import { CactusLinkBTCWallet } from './providers/btc/CactusLinkBTCWallet'
+import { LeapBTCWallet } from 'providers/btc/LeapBTCWallet'
 
 type TomoWalletType = 'extension' | 'qrcode' | 'injected'
 
@@ -43,6 +44,14 @@ type TomoWallet = {
 // Special case for the browser wallet. i.e injected wallet
 
 export const walletList: TomoWallet[] = [
+  {
+    id: 'bitcoin_leap',
+    img: leapIcon,
+    name: 'Leap',
+    chainType: 'bitcoin',
+    connectProvider: LeapBTCWallet,
+    type: 'extension'
+  },
   {
     id: 'bitcoin_okx',
     img: okxIcon,
