@@ -16,7 +16,7 @@ import {
   // @ts-ignore
 } from '@tomo-inc/wallet-connect-sdk/dist/state'
 import '@tomo-inc/wallet-connect-sdk/style.css'
-import { walletList } from '../main'
+import { btcWalletList, cosmosWalletList } from '../main'
 
 // window.injectedTomo = {
 //   info: {
@@ -38,7 +38,7 @@ export default function Demo() {
     <TomoContextProvider
       style={style}
       // @ts-ignore
-      additionalWallets={walletList}
+      additionalWallets={[...btcWalletList, ...cosmosWalletList]}
     >
       <ChildComponent style={style} setStyle={setStyle} />
     </TomoContextProvider>
@@ -57,8 +57,8 @@ export function ChildComponent(props: ChildProps) {
   const tomoWalletConnect = useTomoWalletConnect()
   const walletList = useWalletList()
 
-  const cosmosIsConnect = tomoWalletState.cosmos.connected
-  const btcIsConnect = tomoWalletState.bitcoin.connected
+  const cosmosIsConnect = tomoWalletState.cosmos?.connected
+  const btcIsConnect = tomoWalletState.bitcoin?.connected
 
   const [cosmosAddress, setCosmosAddress] = useState('')
   const [curChainType, setCurChainType] = useState<ChainType>('bitcoin')

@@ -1,11 +1,10 @@
 import {
-  TomoChainCosmos,
+  ProviderOption,
   TomoCosmosInjected,
   WalletProvider
 } from '../../WalletProvider'
 import {
   AminoSignResponse,
-  BroadcastMode,
   KeplrSignOptions,
   StdSignature,
   StdSignDoc
@@ -16,15 +15,17 @@ import {
 } from '@keplr-wallet/types/src/cosmjs'
 import { SigningStargateClient } from '@cosmjs/stargate'
 import { SigningStargateClientOptions } from '@cosmjs/stargate/build/signingstargateclient'
+import { DeliverTxResponse } from '@cosmjs/stargate/build/stargateclient'
+import { Buffer } from 'buffer'
 
 const DEFAULT_RPC = 'https://cosmoshub.validator.network:443'
 
-export class CosmosProvider extends WalletProvider {
+export abstract class CosmosProvider extends WalletProvider {
   provider: TomoCosmosInjected
   offlineSigner?: OfflineAminoSigner & OfflineDirectSigner
   clientPromise?: Promise<SigningStargateClient>
-  constructor(chains: TomoChainCosmos[], provider: TomoCosmosInjected) {
-    super(chains)
+  constructor(option: ProviderOption, provider: TomoCosmosInjected) {
+    super(option)
     this.provider = provider
   }
 
@@ -34,6 +35,10 @@ export class CosmosProvider extends WalletProvider {
     this.offlineSigner = this.provider.getOfflineSigner(curChainId)
     await this.getAddress()
     return this
+  }
+
+  initSigningStargateClient(client: SigningStargateClient) {
+    this.clientPromise = Promise.resolve(client)
   }
 
   /**
@@ -97,9 +102,9 @@ export class CosmosProvider extends WalletProvider {
       throw new Error('Unmatched chain id with the offline signer')
     }
 
-    const key = await this.provider.getKey(chainId)
+    const curAddress = await this.getAddress()
 
-    if (key.bech32Address !== signerAddress) {
+    if (curAddress !== signerAddress) {
       throw new Error('Unknown signer address')
     }
 
@@ -119,8 +124,27 @@ export class CosmosProvider extends WalletProvider {
     return await this.provider.signArbitrary(chainId, signer, data)
   }
 
-  async sendTx(tx: Uint8Array, mode: BroadcastMode): Promise<Uint8Array> {
-    const chainId = await this.getNetwork()
-    return this.provider.sendTx(chainId, tx, mode)
+  async broadcastTx(
+    tx: Uint8Array,
+    timeoutMs?: number,
+    pollIntervalMs?: number
+  ): Promise<DeliverTxResponse> {
+    const signingStargateClient = await this.getSigningStargateClient()
+    return await signingStargateClient.broadcastTx(
+      tx,
+      timeoutMs,
+      pollIntervalMs
+    )
+  }
+
+  async getPublicKeyHex() {
+    const curChainId = await this.getNetwork()
+    const key = await this.provider.getKey(curChainId)
+    return Buffer.from(key.pubKey).toString('hex')
+  }
+
+  async getOfflineSigner() {
+    const curChainId = await this.getNetwork()
+    return this.provider.getOfflineSigner(curChainId)
   }
 }

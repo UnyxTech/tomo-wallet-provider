@@ -8,12 +8,11 @@ import {
   setBtcApiUrl,
   setBtcServiceApiUrl
 } from '../../mempoolApi'
-import { parseUnits } from '../../utils/parseUnits'
 import {
   Fees,
   InscriptionResult,
   Network,
-  TomoChainBTC,
+  ProviderOption,
   UTXO,
   WalletProvider
 } from '../../WalletProvider'
@@ -52,14 +51,14 @@ export type TomoBitcoinInjected = {
 export abstract class BTCProvider extends WalletProvider {
   bitcoinNetworkProvider: TomoBitcoinInjected
   constructor(
-    chains: TomoChainBTC[],
+    option: ProviderOption,
     bitcoinNetworkProvider: TomoBitcoinInjected
   ) {
-    super(chains)
+    super(option)
     this.bitcoinNetworkProvider = bitcoinNetworkProvider
     initBTCEccLib()
-    setBtcApiUrl(chains?.[0]?.backendUrls?.mempoolUrl)
-    setBtcServiceApiUrl(chains?.[0]?.backendUrls?.inscriptionUrl)
+    setBtcApiUrl(this.chains?.[0]?.backendUrls?.mempoolUrl)
+    setBtcServiceApiUrl(this.chains?.[0]?.backendUrls?.inscriptionUrl)
   }
   /**
    * Gets the address of the connected wallet.
@@ -145,7 +144,7 @@ export abstract class BTCProvider extends WalletProvider {
   async sendBitcoin(to: string, satAmount: number): Promise<string> {
     const result = await this.bitcoinNetworkProvider.sendBitcoin(
       to,
-      Number(parseUnits(satAmount.toString(), 8))
+      Number(satAmount)
     )
     return result
   }
@@ -160,6 +159,7 @@ export abstract class BTCProvider extends WalletProvider {
   ): Promise<InscriptionResult> {
     return await getInscriptions({
       address: await this.getAddress(),
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       networkType: (await this.getNetwork()).toUpperCase(),
       cursor: cursor,

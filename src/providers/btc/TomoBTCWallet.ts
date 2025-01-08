@@ -1,17 +1,20 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { BTCProvider } from './BTCProvider'
-import { TomoChain } from '../../WalletProvider'
+import { getWindow, ProviderOption } from '../../WalletProvider'
+import tomoIcon from '../../icons/tomo.png'
+import { TomoWallet } from '../../types'
 
 export const tomoProvider = 'tomo_btc'
 
 export class TomoBTCWallet extends BTCProvider {
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window[tomoProvider]
+    const bitcoinNetworkProvider = getWindow(option)[tomoProvider]
     // check whether there is Tomo extension
     if (!bitcoinNetworkProvider) {
       throw new Error('Tomo Wallet extension not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
   }
 
   connectWallet = async (): Promise<this> => {
@@ -55,4 +58,20 @@ export class TomoBTCWallet extends BTCProvider {
     // @ts-ignore
     return await this.bitcoinNetworkProvider.pushTx(txHex)
   }
+
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(tomoBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(tomoBTCWalletOption.img)
+  }
 }
+
+export const tomoBTCWalletOption = {
+  id: 'bitcoin_tomo',
+  img: tomoIcon,
+  name: 'Tomo',
+  chainType: 'bitcoin',
+  connectProvider: TomoBTCWallet,
+  type: 'extension'
+} as TomoWallet

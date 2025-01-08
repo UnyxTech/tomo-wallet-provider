@@ -1,18 +1,20 @@
-import { Network, TomoChain, WalletProvider } from '../../WalletProvider'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { getWindow, Network, ProviderOption } from '../../WalletProvider'
 import { Psbt } from 'bitcoinjs-lib'
-import { parseUnits } from '../../utils/parseUnits'
 import { toNetwork } from '../../config/network.config'
 import { initBTCEccLib } from '../../utils/eccLibUtils'
 import { BTCProvider } from './BTCProvider'
+import { TomoWallet } from '../../types'
+import binanceIcon from '../../icons/binance.webp'
 
 export class BinanceBTCWallet extends BTCProvider {
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window?.binancew3w?.bitcoin
+    const bitcoinNetworkProvider = getWindow(option)?.binancew3w?.bitcoin
     if (!bitcoinNetworkProvider) {
       throw new Error('Binance Wallet not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
     initBTCEccLib()
   }
 
@@ -57,7 +59,6 @@ export class BinanceBTCWallet extends BTCProvider {
   }
 
   async sendBitcoin(to: string, satAmount: number) {
-    satAmount = Number(parseUnits(satAmount.toString(), 8).toString())
     const walletAddress = await this.getAddress()
     const utxos = await this.getUtxos(walletAddress)
     utxos.sort((a, b) => a.value - b.value)
@@ -125,4 +126,19 @@ export class BinanceBTCWallet extends BTCProvider {
       network.replace('mainnet', 'livenet')
     )
   }
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(binanceBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(binanceBTCWalletOption.img)
+  }
 }
+
+export const binanceBTCWalletOption = {
+  id: 'bitcoin_binance',
+  img: binanceIcon,
+  name: 'Binance',
+  chainType: 'bitcoin',
+  connectProvider: BinanceBTCWallet,
+  type: 'injected'
+} as TomoWallet

@@ -1,4 +1,5 @@
-import KeystoneSDK, { UR } from '@keystonehq/keystone-sdk'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import KeystoneSDK, { KeystoneBitcoinSDK, UR } from '@keystonehq/keystone-sdk'
 import sdk, {
   PlayStatus,
   ReadStatus,
@@ -16,15 +17,14 @@ import {
 import { tapleafHash } from 'bitcoinjs-lib/src/payments/bip341'
 import { toXOnly } from 'bitcoinjs-lib/src/psbt/bip371'
 import { pubkeyInScript } from 'bitcoinjs-lib/src/psbt/psbtutils'
-
-import { WalletError, WalletErrorType } from '../../../config/errors'
-import { Network, TomoChain } from '../../../WalletProvider'
+import { Network, ProviderOption } from '../../../WalletProvider'
 
 import BIP322 from './bip322'
-import { parseUnits } from '../../../utils/parseUnits'
 import { toNetwork } from '../../../config/network.config'
 import { initBTCEccLib } from '../../../utils/eccLibUtils'
 import { BTCProvider } from '../BTCProvider'
+import { TomoWallet } from '../../../types'
+import keystoneIcon from '../../../icons/keystone.svg'
 
 type KeystoneWalletInfo = {
   mfp: string | undefined
@@ -42,18 +42,18 @@ const curKeystoneSDK = KeystoneSDK?.default ? KeystoneSDK.default : KeystoneSDK
 
 export class KeystoneWallet extends BTCProvider {
   private keystoneWaleltInfo: KeystoneWalletInfo
-  private viewSdk: typeof sdk
+  private viewSDK: typeof sdk
   private dataSdk: KeystoneSDK
   private networkEnv: Network | undefined
 
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    super(chains, {})
+    super(option, {})
     initBTCEccLib()
 
     curSdk.bootstrap()
 
-    this.viewSdk = curSdk
+    this.viewSDK = curSdk
     this.dataSdk = new curKeystoneSDK({
       origin: ''
     })
@@ -68,7 +68,7 @@ export class KeystoneWallet extends BTCProvider {
    * @throws An error if there is an issue reading the QR code or retrieving the extended public key.
    */
   connectWallet = async (): Promise<this> => {
-    const keystoneContainer = await this.viewSdk.getSdk()
+    const keystoneContainer = await this.viewSDK.getSdk()
 
     // Initialize the Keystone container and read the QR code for sync keystone device with the staking app.
     const decodedResult = await keystoneContainer.read(
@@ -92,10 +92,7 @@ export class KeystoneWallet extends BTCProvider {
       }
     )
     if (decodedResult.status === ReadStatus.canceled) {
-      throw new WalletError(
-        WalletErrorType.ConnectionCancelled,
-        'Connection cancelled'
-      )
+      throw new Error('Connection to Keystone was canceled')
     } else if (decodedResult.status !== ReadStatus.success) {
       throw new Error('Error reading QR code, Please try again.')
     }
@@ -105,7 +102,7 @@ export class KeystoneWallet extends BTCProvider {
 
     // currently only the p2tr address will be used.
     const P2TRINDEX = 3
-    let xpub = accountData.keys[P2TRINDEX].extendedPublicKey
+    const xpub = accountData.keys[P2TRINDEX].extendedPublicKey
 
     this.keystoneWaleltInfo = {
       mfp: accountData.masterFingerprint,
@@ -140,18 +137,34 @@ export class KeystoneWallet extends BTCProvider {
   }
 
   signPsbt = async (psbtHex: string): Promise<string> => {
+    if (
+      !this.keystoneWaleltInfo?.address ||
+      !this.keystoneWaleltInfo?.publicKeyHex
+    ) {
+      throw new Error('Keystone Wallet not connected')
+    }
+    if (!psbtHex) throw new Error('psbt hex is required')
     // enhance the PSBT with the BIP32 derivation information
     // to tell keystone which key to use to sign the PSBT
     let psbt = Psbt.fromHex(psbtHex)
     psbt = this.enhancePsbt(psbt)
-    let enhancedPsbt = psbt.toHex()
+    const enhancedPsbt = psbt.toHex()
     // sign the psbt with keystone
     const signedPsbt = await this.sign(enhancedPsbt)
     return signedPsbt.toHex()
   }
 
   signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
-    let result = []
+    if (
+      !this.keystoneWaleltInfo?.address ||
+      !this.keystoneWaleltInfo?.publicKeyHex
+    ) {
+      throw new Error('Keystone Wallet not connected')
+    }
+    if (!psbtsHexes && !Array.isArray(psbtsHexes))
+      throw new Error('psbts hexes are required')
+
+    const result = []
     for (const psbt of psbtsHexes) {
       const signedHex = await this.signPsbt(psbt)
       result.push(signedHex)
@@ -199,12 +212,41 @@ export class KeystoneWallet extends BTCProvider {
     return BIP322.encodeWitness(signedPsbt)
   }
 
+  signMessageECDSA = async (message: string): Promise<string> => {
+    if (!this.keystoneWaleltInfo)
+      throw new Error('Keystone Wallet not connected')
+
+    const ur = this.dataSdk.btc.generateSignRequest({
+      requestId: '7afd5e09-9267-43fb-a02e-08c4a09417ec',
+      signData: Buffer.from(message, 'utf-8').toString('hex'),
+      dataType: KeystoneBitcoinSDK.DataType.message,
+      accounts: [
+        {
+          path: `${this.keystoneWaleltInfo.path}/0/0`,
+          xfp: `${this.keystoneWaleltInfo.mfp}`,
+          address: this.keystoneWaleltInfo.address
+        }
+      ],
+      origin: 'babylon staking app'
+    })
+
+    const signMessage = composeQRProcess(SupportedResult.UR_BTC_SIGNATURE)
+
+    const keystoneContainer = await this.viewSDK.getSdk()
+    const signedMessageUR = await signMessage(keystoneContainer, ur)
+
+    const result = this.dataSdk.btc.parseSignature(signedMessageUR)
+    return Buffer.from(result.signature, 'hex').toString('base64')
+  }
+
   async signMessage(
     message: string,
     type: 'ecdsa' | 'bip322-simple' = 'ecdsa'
   ): Promise<string> {
     if (type === 'bip322-simple') {
       return await this.signMessageBIP322(message)
+    } else if (type === 'ecdsa') {
+      return await this.signMessageECDSA(message)
     }
     throw new Error('Unsupported message signing type')
   }
@@ -216,17 +258,18 @@ export class KeystoneWallet extends BTCProvider {
    *  @returns The signed PSBT in hex format.
    * */
   private sign = async (psbtHex: string): Promise<Psbt> => {
+    if (!psbtHex) throw new Error('psbt hex is required')
     const ur = this.dataSdk.btc.generatePSBT(Buffer.from(psbtHex, 'hex'))
 
     // compose the signing process for the Keystone device
     const signPsbt = composeQRProcess(SupportedResult.UR_PSBT)
 
-    const keystoneContainer = await this.viewSdk.getSdk()
+    const keystoneContainer = await this.viewSDK.getSdk()
     const signePsbtUR = await signPsbt(keystoneContainer, ur)
 
     // extract the signed PSBT from the UR
     const signedPsbtHex = this.dataSdk.btc.parsePSBT(signePsbtUR)
-    let signedPsbt = Psbt.fromHex(signedPsbtHex)
+    const signedPsbt = Psbt.fromHex(signedPsbtHex)
     signedPsbt.finalizeAllInputs()
     return signedPsbt
   }
@@ -240,6 +283,15 @@ export class KeystoneWallet extends BTCProvider {
    * @returns The PSBT object with the BIP32 derivation information added.
    */
   private enhancePsbt = (psbt: Psbt): Psbt => {
+    if (
+      !this.keystoneWaleltInfo?.scriptPubKeyHex ||
+      !this.keystoneWaleltInfo?.publicKeyHex ||
+      !this.keystoneWaleltInfo?.mfp ||
+      !this.keystoneWaleltInfo?.path
+    ) {
+      throw new Error('Keystone Wallet not connected')
+    }
+
     const bip32Derivation = {
       masterFingerprint: Buffer.from(this.keystoneWaleltInfo!.mfp!, 'hex'),
       path: `${this.keystoneWaleltInfo!.path!}/0/0`,
@@ -258,18 +310,9 @@ export class KeystoneWallet extends BTCProvider {
     return psbt
   }
 
-  on = (eventName: string, callBack: () => void): void => {
-    console.error(
-      'this function currently is not supported on Keystone',
-      eventName
-    )
-  }
-  off = (eventName: string, callBack: () => void) => {
-    console.error(
-      'this function currently is not supported on Keystone',
-      eventName
-    )
-  }
+  // Not implemented because of the Airgapped HW nature
+  on = (): void => {}
+  off = (): void => {}
 
   async switchNetwork(network: Network) {
     this.networkEnv = network
@@ -285,7 +328,6 @@ export class KeystoneWallet extends BTCProvider {
   }
 
   async sendBitcoin(to: string, satAmount: number) {
-    satAmount = Number(parseUnits(satAmount.toString(), 8).toString())
     const walletAddress = await this.getAddress()
     const utxos = await this.getUtxos(walletAddress)
     utxos.sort((a, b) => a.value - b.value)
@@ -346,7 +388,22 @@ export class KeystoneWallet extends BTCProvider {
     const txId = await this.pushTx(pushData.toHex())
     return txId
   }
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(keystoneBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(keystoneBTCWalletOption.img)
+  }
 }
+
+export const keystoneBTCWalletOption = {
+  id: 'bitcoin_keystone',
+  img: keystoneIcon,
+  name: 'Keystone',
+  chainType: 'bitcoin',
+  connectProvider: KeystoneWallet,
+  type: 'qrcode'
+} as TomoWallet
 
 /**
  * High order function to compose the QR generation and scanning process for specific data types.
@@ -367,7 +424,7 @@ const composeQRProcess =
     if (status !== PlayStatus.success)
       throw new Error('Could not generate the QR code, please try again.')
 
-    let urResult = await container.read([destinationDataType], {
+    const urResult = await container.read([destinationDataType], {
       title: 'Get the Signature from Keystone',
       description: 'Please scan the QR code displayed on your Keystone',
       URTypeErrorMessage:
@@ -394,7 +451,7 @@ const generateP2trAddressFromXpub = (
 ): { address: string; pubkeyHex: string; scriptPubKeyHex: string } => {
   const hdNode = HDKey.fromExtendedKey(xpub)
   const derivedNode = hdNode.derive(path)
-  let pubkeyBuffer = Buffer.from(derivedNode.publicKey!)
+  const pubkeyBuffer = Buffer.from(derivedNode.publicKey!)
   const childNodeXOnlyPubkey = toXOnly(pubkeyBuffer)
   const { address, output } = payments.p2tr({
     internalPubkey: childNodeXOnlyPubkey,

@@ -1,14 +1,17 @@
-import { TomoChain } from '../../WalletProvider'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { getWindow, ProviderOption } from '../../WalletProvider'
 import { BTCProvider } from './BTCProvider'
+import { TomoWallet } from '../../types'
+import cactuslinkIcon from '../../icons/cactuslink.svg'
 
 export class CactusLinkBTCWallet extends BTCProvider {
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window.cactuslink
+    const bitcoinNetworkProvider = getWindow(option).cactuslink
     if (!bitcoinNetworkProvider) {
       throw new Error('Cactus Link Wallet extension not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
   }
 
   async connectWallet(): Promise<this> {
@@ -62,4 +65,20 @@ export class CactusLinkBTCWallet extends BTCProvider {
     }
     return this.bitcoinNetworkProvider?.off?.(eventName, callBack)
   }
+
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(cactusLinkBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(cactusLinkBTCWalletOption.img)
+  }
 }
+
+export const cactusLinkBTCWalletOption = {
+  id: 'bitcoin_cactuslink',
+  img: cactuslinkIcon,
+  name: 'Cactus Link',
+  chainType: 'bitcoin',
+  connectProvider: CactusLinkBTCWallet,
+  type: 'extension'
+} as TomoWallet

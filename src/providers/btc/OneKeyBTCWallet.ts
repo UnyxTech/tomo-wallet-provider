@@ -1,5 +1,8 @@
-import { Network, TomoChain } from '../../WalletProvider'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { getWindow, Network, ProviderOption } from '../../WalletProvider'
 import { BTCProvider } from './BTCProvider'
+import onekeyIcon from '../../icons/onekey.svg'
+import { TomoWallet } from '../../types'
 
 export const oneKeyProvider = '$onekey'
 
@@ -11,14 +14,14 @@ const INTERNAL_NETWORK_NAMES = {
 }
 
 export class OneKeyBTCWallet extends BTCProvider {
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window[oneKeyProvider]?.btcwallet
+    const bitcoinNetworkProvider = getWindow(option)[oneKeyProvider]?.btcwallet
     // check whether there is an OneKey extension
     if (!bitcoinNetworkProvider) {
       throw new Error('OneKey Wallet extension not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
   }
 
   async connectWallet(): Promise<this> {
@@ -46,4 +49,19 @@ export class OneKeyBTCWallet extends BTCProvider {
       INTERNAL_NETWORK_NAMES[network] as Network
     )
   }
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(oneKeyBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(oneKeyBTCWalletOption.img)
+  }
 }
+
+export const oneKeyBTCWalletOption = {
+  id: 'bitcoin_onekey',
+  img: onekeyIcon,
+  name: 'OneKey',
+  chainType: 'bitcoin',
+  connectProvider: OneKeyBTCWallet,
+  type: 'extension'
+} as TomoWallet

@@ -1,22 +1,29 @@
-import { Network, TomoChain, WalletInfo } from '../../WalletProvider'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import {
+  getWindow,
+  Network,
+  ProviderOption,
+  WalletInfo
+} from '../../WalletProvider'
 
 import { Psbt } from 'bitcoinjs-lib'
-import { parseUnits } from '../../utils/parseUnits'
 import { toNetwork } from '../../config/network.config'
 import { BTCProvider } from './BTCProvider'
+import { TomoWallet } from '../../types'
+import imtokenIcon from '../../icons/imtoken.svg'
 
 // window object for imToken Wallet
 export const imTokenWalletProvider = 'bitcoin'
 
 export class ImTokenBTCWallet extends BTCProvider {
   private walletInfo: WalletInfo | undefined
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window?.[imTokenWalletProvider]
+    const bitcoinNetworkProvider = getWindow(option)?.[imTokenWalletProvider]
     if (!bitcoinNetworkProvider) {
       throw new Error('imToken Wallet not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
   }
 
   connectWallet = async (): Promise<this> => {
@@ -123,73 +130,83 @@ export class ImTokenBTCWallet extends BTCProvider {
   }
 
   async sendBitcoin(to: string, satAmount: number) {
-    try {
-      satAmount = Number(parseUnits(satAmount.toString(), 8).toString())
-      const walletAddress = await this.getAddress()
-      const utxos = await this.getUtxos(walletAddress)
-      utxos.sort((a, b) => a.value - b.value)
-      let totalInput = 0
-      const inputs = []
-      const FeeRate = (await this.getNetworkFees()).fastestFee
-      let estimatedFee = 0
+    const walletAddress = await this.getAddress()
+    const utxos = await this.getUtxos(walletAddress)
+    utxos.sort((a, b) => a.value - b.value)
+    let totalInput = 0
+    const inputs = []
+    const FeeRate = (await this.getNetworkFees()).fastestFee
+    let estimatedFee = 0
 
-      for (const utxo of utxos) {
-        inputs.push({
-          hash: utxo.txid,
-          index: utxo.vout,
-          witnessUtxo: {
-            script: Buffer.from(utxo.scriptPubKey, 'hex'),
-            value: utxo.value
-          }
-        })
-
-        totalInput += utxo.value
-
-        const estimatedTxSize = inputs.length * 180 + 2 * 34 + 10
-        estimatedFee = estimatedTxSize * FeeRate
-
-        if (totalInput >= satAmount + estimatedFee) {
-          break
+    for (const utxo of utxos) {
+      inputs.push({
+        hash: utxo.txid,
+        index: utxo.vout,
+        witnessUtxo: {
+          script: Buffer.from(utxo.scriptPubKey, 'hex'),
+          value: utxo.value
         }
-      }
-      if (totalInput < satAmount + estimatedFee) {
-        throw new Error('1Insufficient funds for the transaction.')
-      }
-      if (inputs.length === 0) {
-        throw new Error('No inputs available for the transaction.')
-      }
-      const changeAmount = totalInput - satAmount - estimatedFee
-
-      const psbt = new Psbt({ network: toNetwork(await this.getNetwork()) })
-
-      for (const input of inputs) {
-        psbt.addInput(input)
-      }
-
-      psbt.addOutput({
-        address: to,
-        value: satAmount
       })
 
-      if (changeAmount > 0) {
-        const changeAddress = await this.getAddress()
-        psbt.addOutput({
-          address: changeAddress,
-          value: changeAmount
-        })
+      totalInput += utxo.value
+
+      const estimatedTxSize = inputs.length * 180 + 2 * 34 + 10
+      estimatedFee = estimatedTxSize * FeeRate
+
+      if (totalInput >= satAmount + estimatedFee) {
+        break
       }
-
-      const signedPsbtHex = await this.signPsbt(psbt.toHex())
-      const pushData = Psbt.fromHex(signedPsbtHex).extractTransaction()
-
-      const txId = await this.pushTx(pushData.toHex())
-      return txId
-    } catch (e) {
-      throw e
     }
+    if (totalInput < satAmount + estimatedFee) {
+      throw new Error('1Insufficient funds for the transaction.')
+    }
+    if (inputs.length === 0) {
+      throw new Error('No inputs available for the transaction.')
+    }
+    const changeAmount = totalInput - satAmount - estimatedFee
+
+    const psbt = new Psbt({ network: toNetwork(await this.getNetwork()) })
+
+    for (const input of inputs) {
+      psbt.addInput(input)
+    }
+
+    psbt.addOutput({
+      address: to,
+      value: satAmount
+    })
+
+    if (changeAmount > 0) {
+      const changeAddress = await this.getAddress()
+      psbt.addOutput({
+        address: changeAddress,
+        value: changeAmount
+      })
+    }
+
+    const signedPsbtHex = await this.signPsbt(psbt.toHex())
+    const pushData = Psbt.fromHex(signedPsbtHex).extractTransaction()
+
+    const txId = await this.pushTx(pushData.toHex())
+    return txId
   }
 
   async switchNetwork(network: Network): Promise<void> {
     throw new Error('Method not implemented.')
   }
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(imTokenBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(imTokenBTCWalletOption.img)
+  }
 }
+
+export const imTokenBTCWalletOption = {
+  id: 'bitcoin_imtoken',
+  img: imtokenIcon,
+  name: 'imToken',
+  chainType: 'bitcoin',
+  connectProvider: ImTokenBTCWallet,
+  type: 'injected'
+} as TomoWallet

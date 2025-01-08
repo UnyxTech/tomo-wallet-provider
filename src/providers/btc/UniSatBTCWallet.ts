@@ -1,26 +1,24 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
+  getWindow,
   InscriptionResult,
   Network,
-  TomoChain,
-  WalletInfo,
-  WalletProvider
+  ProviderOption
 } from '../../WalletProvider'
-import { parseUnits } from '../../utils/parseUnits'
 import { BTCProvider } from './BTCProvider'
+import unisatIcon from '../../icons/unisat_wallet.svg'
+import { TomoWallet } from '../../types'
 
 export const unisatProvider = 'unisat'
 
 export class UniSatBTCWallet extends BTCProvider {
-  private unisatWalletInfo: WalletInfo | undefined
-
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const bitcoinNetworkProvider = window[unisatProvider]
-    // check whether there is an OKX Wallet extension
+    const bitcoinNetworkProvider = getWindow(option)[unisatProvider]
     if (!bitcoinNetworkProvider) {
       throw new Error('UniSat Wallet extension not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
   }
 
   connectWallet = async (): Promise<this> => {
@@ -28,12 +26,8 @@ export class UniSatBTCWallet extends BTCProvider {
     try {
       const accounts = await unisatwallet.requestAccounts()
       const compressedPublicKey = await unisatwallet.getPublicKey()
-      if (compressedPublicKey && accounts[0]) {
-        this.unisatWalletInfo = {
-          publicKeyHex: compressedPublicKey,
-          address: accounts[0]
-        }
-        return this
+      if (!accounts || !compressedPublicKey) {
+        throw new Error('Could not connect to unisat wallet')
       }
       return this
     } catch (error) {
@@ -55,10 +49,7 @@ export class UniSatBTCWallet extends BTCProvider {
   }
 
   async sendBitcoin(to: string, satAmount: number) {
-    const result = await this.bitcoinNetworkProvider.sendBitcoin(
-      to,
-      Number(parseUnits(satAmount.toString(), 8))
-    )
+    const result = await this.bitcoinNetworkProvider.sendBitcoin(to, satAmount)
     return result
   }
 
@@ -66,7 +57,7 @@ export class UniSatBTCWallet extends BTCProvider {
     // @ts-ignore
     const result = await this.bitcoinNetworkProvider.getBalance()
     // @ts-ignore
-    return result.total
+    return result.confirmed
   }
 
   pushTx = async (txHex: string): Promise<string> => {
@@ -80,4 +71,20 @@ export class UniSatBTCWallet extends BTCProvider {
     // @ts-ignore
     return await this.bitcoinNetworkProvider.getInscriptions(cursor, size)
   }
+
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(uniSatBTCWalletOption.name)
+  }
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(uniSatBTCWalletOption.img)
+  }
 }
+
+export const uniSatBTCWalletOption = {
+  id: 'bitcoin_unisat',
+  img: unisatIcon,
+  name: 'Unisat',
+  chainType: 'bitcoin',
+  connectProvider: UniSatBTCWallet,
+  type: 'extension'
+} as TomoWallet

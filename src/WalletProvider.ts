@@ -1,4 +1,14 @@
 import { Keplr } from '@keplr-wallet/types'
+import { KeplrSignOptions, Key } from '@keplr-wallet/types/src/wallet/keplr'
+import {
+  AminoSignResponse,
+  BroadcastMode,
+  OfflineAminoSigner,
+  OfflineDirectSigner,
+  StdSignature,
+  StdSignDoc
+} from '@keplr-wallet/types/src/cosmjs'
+import { ChainInfo } from '@keplr-wallet/types/src/chain-info'
 
 export type Fees = {
   // fee for inclusion in the next block
@@ -75,7 +85,37 @@ export type TomoChainCosmos = TomoChain & {
   }
 }
 
-export type TomoCosmosInjected = Keplr
+// export type TomoCosmosInjected = Keplr
+export type TomoCosmosInjected = {
+  enable(chainIds: string | string[]): Promise<void>
+  getOfflineSigner(
+    chainId: string,
+    signOptions?: KeplrSignOptions
+  ): OfflineAminoSigner & OfflineDirectSigner
+  getKey(chainId: string): Promise<Key>
+  signAmino(
+    chainId: string,
+    signer: string,
+    signDoc: StdSignDoc,
+    signOptions?: KeplrSignOptions
+  ): Promise<AminoSignResponse>
+  signArbitrary(
+    chainId: string,
+    signer: string,
+    data: string | Uint8Array
+  ): Promise<StdSignature>
+  sendTx(
+    chainId: string,
+    tx: Uint8Array,
+    mode: BroadcastMode
+  ): Promise<Uint8Array>
+  experimentalSuggestChain?(chainInfo: ChainInfo): Promise<void>
+}
+
+export type ProviderOption = {
+  getWindow?: () => Window
+  chains: TomoChain[]
+}
 
 /**
  * Abstract class representing a wallet provider.
@@ -84,8 +124,10 @@ export type TomoCosmosInjected = Keplr
 
 export abstract class WalletProvider {
   chains: TomoChain[]
-  constructor(chains: TomoChain[]) {
-    this.chains = chains
+  option: ProviderOption
+  constructor(option: ProviderOption) {
+    this.chains = option.chains
+    this.option = option
   }
   /**
    * Connects to the wallet and returns the instance of the wallet provider.
@@ -106,4 +148,20 @@ export abstract class WalletProvider {
    * @returns A promise that resolves to the network of the current account.
    */
   abstract getNetwork(): Promise<string>
+
+  /**
+   * Gets the name of the wallet provider.
+   * @returns Name of the wallet provider.
+   */
+  abstract getWalletProviderName(): Promise<string>
+
+  /**
+   * Gets the icon URL of the wallet provider.
+   * @returns Icon URL of the wallet provider.
+   */
+  abstract getWalletProviderIcon(): Promise<string>
+}
+
+export function getWindow(option: ProviderOption | undefined): Window {
+  return option?.getWindow ? option.getWindow() : window
 }

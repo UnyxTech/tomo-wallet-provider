@@ -1,27 +1,29 @@
-import { validateAddress } from '../../config/network.config'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
+  getWindow,
   InscriptionResult,
   Network,
-  TomoChain,
+  ProviderOption,
   WalletInfo
 } from '../../WalletProvider'
-import { parseUnits } from '../../utils/parseUnits'
 import { BTCProvider } from './BTCProvider'
+import okxIcon from '../../icons/okx_wallet.svg'
+import { TomoWallet } from '../../types'
 
 export class OKXBTCWallet extends BTCProvider {
   private okxWalletInfo: WalletInfo | undefined
   private okxWallet: any
   private networkEnv: Network | undefined = Network.MAINNET
 
-  constructor(chains: TomoChain[]) {
+  constructor(option: ProviderOption) {
     // @ts-ignore
-    const okxWallet = window.okxwallet
+    const okxWallet = getWindow(option).okxwallet
     const bitcoinNetworkProvider = okxWallet?.bitcoin
     // check whether there is an OKX Wallet extension
     if (!bitcoinNetworkProvider) {
       throw new Error('OKX Wallet extension not found')
     }
-    super(chains, bitcoinNetworkProvider)
+    super(option, bitcoinNetworkProvider)
     this.okxWallet = okxWallet
   }
 
@@ -45,9 +47,6 @@ export class OKXBTCWallet extends BTCProvider {
     }
 
     const { address, compressedPublicKey } = result
-
-    // @ts-ignore
-    validateAddress(this.networkEnv, address)
 
     if (compressedPublicKey && address) {
       this.okxWalletInfo = {
@@ -96,7 +95,7 @@ export class OKXBTCWallet extends BTCProvider {
     const result = await this.bitcoinNetworkProvider.sendBitcoin(
       to,
       // @ts-ignore
-      parseUnits(satAmount.toString(), 8).toString()
+      BigInt(satAmount)
     )
     return result
   }
@@ -124,4 +123,21 @@ export class OKXBTCWallet extends BTCProvider {
     // @ts-ignore
     return await this.bitcoinNetworkProvider.getInscriptions(cursor, size)
   }
+
+  getWalletProviderIcon(): Promise<string> {
+    return Promise.resolve(okxBTCWalletOption.img)
+  }
+
+  getWalletProviderName(): Promise<string> {
+    return Promise.resolve(okxBTCWalletOption.name)
+  }
 }
+
+export const okxBTCWalletOption = {
+  id: 'bitcoin_okx',
+  img: okxIcon,
+  name: 'OKX',
+  chainType: 'bitcoin',
+  connectProvider: OKXBTCWallet,
+  type: 'extension'
+} as TomoWallet
