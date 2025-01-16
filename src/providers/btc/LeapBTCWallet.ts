@@ -1,6 +1,6 @@
 import { getWindow, ProviderOption } from '../../WalletProvider'
 import { BTCProvider } from './BTCProvider'
-import leapIcon from '../../icons/leap.jpg'
+import leapIcon from '../../icons/leap.png'
 import { TomoWallet } from '../../types'
 
 export const LEAP_BTC_WALLET_PROVIDER = 'leapBitcoin'

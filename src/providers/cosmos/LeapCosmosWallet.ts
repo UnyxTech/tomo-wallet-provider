@@ -1,7 +1,7 @@
 import { CosmosProvider } from './CosmosProvider'
 import { getWindow, ProviderOption } from '../../WalletProvider'
 import { TomoWallet } from '../../types'
-import leapIcon from '../../icons/leap.jpg'
+import leapIcon from '../../icons/leap.png'
 
 export class LeapCosmosWallet extends CosmosProvider {
   constructor(option: ProviderOption) {
