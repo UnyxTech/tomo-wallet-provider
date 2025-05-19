@@ -5,7 +5,7 @@ import {
   ProviderOption
 } from '../../WalletProvider'
 import { Psbt } from 'bitcoinjs-lib'
-import { BTCProvider } from './BTCProvider'
+import { BTCProvider, SignPsbtOptions } from './BTCProvider'
 import bitgetIcon from '../../icons/bitget-wallet.png'
 import { TomoWallet } from '../../types'
 
@@ -49,7 +49,10 @@ export class BitgetBTCWallet extends BTCProvider {
     return this
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (
+    psbtHex: string,
+    options?: SignPsbtOptions
+  ): Promise<string> => {
     const data = {
       method: 'signPsbt',
       params: {
@@ -57,7 +60,7 @@ export class BitgetBTCWallet extends BTCProvider {
         from: this.bitcoinNetworkProvider.selectedAddress,
         __internalFunc: '__signPsbt_babylon',
         psbtHex,
-        options: {
+        options: options || {
           autoFinalized: true
         }
       }
@@ -79,15 +82,20 @@ export class BitgetBTCWallet extends BTCProvider {
     return psbt.toHex()
   }
 
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
+  signPsbts = async (
+    psbtsHexes: string[],
+    options?: SignPsbtOptions[]
+  ): Promise<string[]> => {
     if (!psbtsHexes && !Array.isArray(psbtsHexes)) {
       throw new Error('params error')
     }
-    const options = psbtsHexes.map((_) => {
-      return {
-        autoFinalized: true
-      }
-    })
+    const curOptions =
+      options ||
+      psbtsHexes.map((_) => {
+        return {
+          autoFinalized: true
+        }
+      })
     const data = {
       method: 'signPsbt',
       params: {
@@ -96,7 +104,7 @@ export class BitgetBTCWallet extends BTCProvider {
         __internalFunc: '__signPsbts_babylon',
         psbtHex: '_',
         psbtHexs: psbtsHexes,
-        options
+        options: curOptions
       }
     }
 

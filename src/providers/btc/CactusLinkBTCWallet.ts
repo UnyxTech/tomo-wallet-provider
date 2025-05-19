@@ -1,5 +1,5 @@
 import { getWindow, ProviderOption } from '../../WalletProvider'
-import { BTCProvider } from './BTCProvider'
+import { BTCProvider, SignPsbtOptions } from './BTCProvider'
 import { TomoWallet } from '../../types'
 import cactuslinkIcon from '../../icons/cactuslink.svg'
 
@@ -34,21 +34,32 @@ export class CactusLinkBTCWallet extends BTCProvider {
     return this
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (
+    psbtHex: string,
+    options?: SignPsbtOptions
+  ): Promise<string> => {
     // @ts-ignore
-    return await this.bitcoinNetworkProvider.signPsbt(psbtHex, {
-      autoFinalized: true
-    })
-  }
-
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
-    const options = psbtsHexes.map((_) => {
-      return {
+    return await this.bitcoinNetworkProvider.signPsbt(
+      psbtHex,
+      options || {
         autoFinalized: true
       }
-    })
+    )
+  }
+
+  signPsbts = async (
+    psbtsHexes: string[],
+    options?: SignPsbtOptions[]
+  ): Promise<string[]> => {
+    const curOptions =
+      options ||
+      psbtsHexes.map((_) => {
+        return {
+          autoFinalized: true
+        }
+      })
     // @ts-ignore
-    return await this.bitcoinNetworkProvider.signPsbts(psbtsHexes, options)
+    return await this.bitcoinNetworkProvider.signPsbts(psbtsHexes, curOptions)
   }
 
   on = (eventName: string, callBack: () => void) => {

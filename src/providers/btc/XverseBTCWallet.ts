@@ -2,7 +2,7 @@ import { address, networks, Psbt } from 'bitcoinjs-lib'
 import { createUnsecuredToken } from 'jsontokens'
 import { getWindow, Network, ProviderOption } from 'WalletProvider'
 import xverseIcon from '../../icons/xverse.png'
-import { BTCProvider } from './BTCProvider'
+import { BTCProvider, SignPsbtOptions } from './BTCProvider'
 import { TomoWallet } from '../../types'
 
 type XverseAddress = {
@@ -198,7 +198,7 @@ export class XverseBTCWallet extends BTCProvider {
     }
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (psbtHex: string, options?: SignPsbtOptions): Promise<string> => {
     if (!psbtHex) throw new Error('psbt hex is required')
     const opt = {
       curNetwork: await this.getNetwork(),
@@ -227,7 +227,7 @@ export class XverseBTCWallet extends BTCProvider {
     }
   }
 
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
+  signPsbts = async (psbtsHexes: string[], options?: SignPsbtOptions[]): Promise<string[]> => {
     if (!psbtsHexes && !Array.isArray(psbtsHexes))
       throw new Error('psbts hexes are required')
     const opt = {

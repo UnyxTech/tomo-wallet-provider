@@ -7,7 +7,7 @@ import {
 
 import { Psbt } from 'bitcoinjs-lib'
 import { toNetwork } from '../../config/network.config'
-import { BTCProvider } from './BTCProvider'
+import { BTCProvider, SignPsbtOptions } from './BTCProvider'
 import { TomoWallet } from '../../types'
 import imtokenIcon from '../../icons/imtoken.svg'
 
@@ -64,22 +64,22 @@ export class ImTokenBTCWallet extends BTCProvider {
     return this.walletInfo.publicKeyHex
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (psbtHex: string, options?: SignPsbtOptions): Promise<string> => {
     // @ts-ignore
     return await this.bitcoinNetworkProvider.request({
       method: 'btc_signPsbt',
-      params: [psbtHex]
+      params: [psbtHex, options]
     })
   }
 
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
+  signPsbts = async (psbtsHexes: string[], options?: SignPsbtOptions[]): Promise<string[]> => {
     if (!psbtsHexes && !Array.isArray(psbtsHexes)) {
       throw new Error('params error')
     }
     // @ts-ignore
     return await this.bitcoinNetworkProvider.request({
       method: 'btc_signPsbts',
-      params: [psbtsHexes]
+      params: [psbtsHexes, options]
     })
   }
 

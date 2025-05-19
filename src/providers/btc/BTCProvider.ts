@@ -100,7 +100,7 @@ export abstract class BTCProvider extends WalletProvider {
    * @returns A promise that resolves to the hex string of the signed PSBT.
    */
   async signPsbt(psbtHex: string, options?: SignPsbtOptions): Promise<string> {
-    return await this.bitcoinNetworkProvider.signPsbt(psbtHex)
+    return await this.bitcoinNetworkProvider.signPsbt(psbtHex, options)
   }
 
   /**
@@ -113,7 +113,7 @@ export abstract class BTCProvider extends WalletProvider {
     psbtsHexes: string[],
     options?: SignPsbtOptions[]
   ): Promise<string[]> {
-    return await this.bitcoinNetworkProvider.signPsbts(psbtsHexes)
+    return await this.bitcoinNetworkProvider.signPsbts(psbtsHexes, options)
   }
 
   /**

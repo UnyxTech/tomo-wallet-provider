@@ -21,7 +21,7 @@ import { Network, ProviderOption } from '../../../WalletProvider'
 import BIP322 from './bip322'
 import { toNetwork } from '../../../config/network.config'
 import { initBTCEccLib } from '../../../utils/eccLibUtils'
-import { BTCProvider } from '../BTCProvider'
+import { BTCProvider, SignPsbtOptions } from '../BTCProvider'
 import { TomoWallet } from '../../../types'
 import keystoneIcon from '../../../icons/keystone.svg'
 
@@ -135,7 +135,7 @@ export class KeystoneWallet extends BTCProvider {
     throw new Error('Could not retrieve the BTC public key')
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (psbtHex: string, options?: SignPsbtOptions): Promise<string> => {
     if (
       !this.keystoneWaleltInfo?.address ||
       !this.keystoneWaleltInfo?.publicKeyHex
@@ -153,7 +153,7 @@ export class KeystoneWallet extends BTCProvider {
     return signedPsbt.toHex()
   }
 
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
+  signPsbts = async (psbtsHexes: string[], options?: SignPsbtOptions[]): Promise<string[]> => {
     if (
       !this.keystoneWaleltInfo?.address ||
       !this.keystoneWaleltInfo?.publicKeyHex
