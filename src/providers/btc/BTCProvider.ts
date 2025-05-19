@@ -23,8 +23,11 @@ export type TomoBitcoinInjected = {
   requestAccounts: () => Promise<string[]>
   getAccounts: () => Promise<string[]>
   getPublicKey: () => Promise<string>
-  signPsbt: (psbtHex: string) => Promise<string>
-  signPsbts: (psbtsHexes: string[]) => Promise<string[]>
+  signPsbt: (psbtHex: string, options?: SignPsbtOptions) => Promise<string>
+  signPsbts: (
+    psbtsHexes: string[],
+    options?: SignPsbtOptions[]
+  ) => Promise<string[]>
   getNetwork: () => Promise<Network>
   signMessage: (
     message: string,
