@@ -4,7 +4,7 @@ import {
   Network,
   ProviderOption
 } from '../../WalletProvider'
-import { BTCProvider } from './BTCProvider'
+import { BTCProvider, SignPsbtOptions } from './BTCProvider'
 import unisatIcon from '../../icons/unisat_wallet.svg'
 import { TomoWallet } from '../../types'
 import { Psbt, address, networks } from 'bitcoinjs-lib'
@@ -123,7 +123,10 @@ export class UniSatBTCWallet extends BTCProvider {
     }
   }
 
-  signPsbt = async (psbtHex: string): Promise<string> => {
+  signPsbt = async (
+    psbtHex: string,
+    options?: SignPsbtOptions
+  ): Promise<string> => {
     const opt = {
       curNetwork: await this.getNetwork(),
       curAddress: await this.getAddress(),
@@ -133,10 +136,15 @@ export class UniSatBTCWallet extends BTCProvider {
     if (!psbtHex) throw new Error('psbt hex is required')
 
     try {
+      const defaultOptions = this.getSignPsbtDefaultOptions(psbtHex, opt)
+      const signOptions = {
+        ...defaultOptions,
+        ...options
+      }
       const signedHex = await this.bitcoinNetworkProvider.signPsbt(
         psbtHex,
         // @ts-ignore
-        this.getSignPsbtDefaultOptions(psbtHex, opt)
+        signOptions
       )
       return signedHex
     } catch (error: Error | any) {
@@ -144,7 +152,10 @@ export class UniSatBTCWallet extends BTCProvider {
     }
   }
 
-  signPsbts = async (psbtsHexes: string[]): Promise<string[]> => {
+  signPsbts = async (
+    psbtsHexes: string[],
+    options?: SignPsbtOptions[]
+  ): Promise<string[]> => {
     const opt = {
       curNetwork: await this.getNetwork(),
       curAddress: await this.getAddress(),
@@ -155,12 +166,17 @@ export class UniSatBTCWallet extends BTCProvider {
       throw new Error('psbts hexes are required')
 
     try {
+      const defaultOptions = psbtsHexes.map((psbtHex) =>
+        this.getSignPsbtDefaultOptions(psbtHex, opt)
+      )
+      const signOptions = options?.map((option, index) => ({
+        ...defaultOptions[index],
+        ...option
+      }))
       return await this.bitcoinNetworkProvider.signPsbts(
         psbtsHexes,
         // @ts-ignore
-        psbtsHexes.map((psbtHex) =>
-          this.getSignPsbtDefaultOptions(psbtHex, opt)
-        )
+        signOptions
       )
     } catch (error: Error | any) {
       throw new Error(error?.message || error)

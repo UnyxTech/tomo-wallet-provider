@@ -43,6 +43,16 @@ export type TomoBitcoinInjected = {
   off?: (eventName: string, callBack: () => void) => void
 }
 
+export interface Contract {
+  id: string
+  params: Record<string, string | number | string[] | number[]>
+}
+
+export interface SignPsbtOptions {
+  autoFinalized?: boolean
+  contracts?: Contract[]
+}
+
 /**
  * Abstract class representing a wallet provider.
  * Provides methods for connecting to a wallet, retrieving wallet information, signing transactions, and more.
@@ -83,18 +93,23 @@ export abstract class BTCProvider extends WalletProvider {
   /**
    * Signs the given PSBT in hex format.
    * @param psbtHex - The hex string of the unsigned PSBT to sign.
+   * @param options - Optional parameters for signing the PSBT.
    * @returns A promise that resolves to the hex string of the signed PSBT.
    */
-  async signPsbt(psbtHex: string): Promise<string> {
+  async signPsbt(psbtHex: string, options?: SignPsbtOptions): Promise<string> {
     return await this.bitcoinNetworkProvider.signPsbt(psbtHex)
   }
 
   /**
    * Signs multiple PSBTs in hex format.
    * @param psbtsHexes - The hex strings of the unsigned PSBTs to sign.
+   * @param options - Optional parameters for signing the PSBTs.
    * @returns A promise that resolves to an array of hex strings, each representing a signed PSBT.
    */
-  async signPsbts(psbtsHexes: string[]): Promise<string[]> {
+  async signPsbts(
+    psbtsHexes: string[],
+    options?: SignPsbtOptions[]
+  ): Promise<string[]> {
     return await this.bitcoinNetworkProvider.signPsbts(psbtsHexes)
   }
 
