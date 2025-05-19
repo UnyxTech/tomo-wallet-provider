@@ -1,7 +1,7 @@
 {
   "name": "@tomo-inc/tomo-wallet-provider",
   "description": "",
-  "version": "1.1.16",
+  "version": "1.1.17",
   "type": "module",
   "exports": {
     ".": {
