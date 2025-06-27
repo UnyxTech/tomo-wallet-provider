@@ -3,9 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { resolve } from 'path'
-import { typescriptPaths } from 'rollup-plugin-typescript-paths'
 import typescript from '@rollup/plugin-typescript'
-
 // https://vitejs.dev/config https://vitest.dev/config
 export default defineConfig({
   plugins: [/*wasm(), */ react(), tsconfigPaths()],
@@ -37,12 +35,21 @@ export default defineConfig({
         '@keystonehq/keystone-sdk',
         '@keystonehq/sdk',
         '@scure/bip32',
-        'bitcoinjs-lib'
+        'bitcoinjs-lib',
+        /^bitcoinjs-lib\/.*/,
+        'libsodium-sumo',
+        'elliptic',
+        'libsodium-wrappers-sumo',
+        'bn.js',
+        /^@cosmjs\/.*/,
+        /^@keplr-wallet\/.*/,
+        'jsontokens',
+        'protobufjs/src',
+        '@protobufjs',
+        'long',
+        'buffer'
       ],
       plugins: [
-        typescriptPaths({
-          preserveExtensions: true
-        }),
         typescript({
           sourceMap: false,
           declaration: true,
