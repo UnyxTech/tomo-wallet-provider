@@ -51,8 +51,51 @@ export interface Contract {
   params: Record<string, string | number | string[] | number[]>
 }
 
+/**
+ * Sign psbt input option, compatible with OneKey signPsbt "toSignInputs" field.
+ */
+export interface SignPsbtToSignInput {
+  /**
+   * Which input index to sign.
+   */
+  index: number
+  /**
+   * Address used to locate the corresponding private key.
+   * Either "address" or "publicKey" should be provided.
+   */
+  address?: string
+  /**
+   * Public key used to locate the corresponding private key.
+   * Either "address" or "publicKey" should be provided.
+   */
+  publicKey?: string
+  /**
+   * Optional sighash types for the input.
+   */
+  sighashTypes?: number[]
+  /**
+   * Default is false. Set true to use original private key when signing taproot inputs.
+   */
+  disableTweakSigner?: boolean
+  /**
+   * Force whether to use tweaked signer. Higher priority than disableTweakSigner.
+   */
+  useTweakedSigner?: boolean
+}
+
 export interface SignPsbtOptions {
+  /**
+   * Whether finalize psbt after signing. Default is true.
+   */
   autoFinalized?: boolean
+  /**
+   * Compatible with OneKey signPsbt "toSignInputs" field.
+   * Used to specify which inputs should be signed and how.
+   */
+  toSignInputs?: SignPsbtToSignInput[]
+  /**
+   * Tomo contracts extension, kept for backward compatibility.
+   */
   contracts?: Contract[]
 }
 
