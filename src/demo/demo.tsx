@@ -9,6 +9,7 @@ import {
   useWalletList
 } from '@tomo-inc/wallet-connect-sdk'
 import React, { useState } from 'react'
+import { Psbt } from 'bitcoinjs-lib'
 
 import {
   ChainType,
@@ -16,6 +17,7 @@ import {
   // @ts-ignore
 } from '@tomo-inc/wallet-connect-sdk/dist/state'
 import '@tomo-inc/wallet-connect-sdk/style.css'
+import { toNetwork } from '../config/network.config'
 import { btcWalletList, cosmosWalletList } from '../main'
 import { bbnTestnet } from './cosmosChain/testnet'
 // import { bbn1 } from './cosmosChain/bbn1'
@@ -255,6 +257,85 @@ export function ChildComponent(props: ChildProps) {
               }}
             >
               btc signMessage('11', 'bip322-simple')
+            </LodingButton>
+
+            <LodingButton
+              disabled={!btcIsConnect}
+              onClick={async () => {
+                try {
+                  const btcProvider = providers.bitcoinProvider
+                  if (!btcProvider) {
+                    throw new Error('bitcoinProvider not found')
+                  }
+                  const address = await btcProvider.getAddress()
+                  const network = await btcProvider.getNetwork()
+                  const utxos = await btcProvider.getUtxos(address)
+                  if (!utxos || utxos.length === 0) {
+                    throw new Error('No UTXOs available for the wallet address')
+                  }
+                  // Use the first UTXO to construct a simple self-transfer PSBT.
+                  const utxo = utxos[0]
+                  const feeReserve = 500 // sats reserved as fee for testing
+                  if (utxo.value <= feeReserve) {
+                    throw new Error('UTXO value is too small to build a test transaction')
+                  }
+                  const sendAmount = utxo.value - feeReserve
+                  const psbt = new Psbt({ network: toNetwork(network) })
+                  psbt.addInput({
+                    hash: utxo.txid,
+                    index: utxo.vout,
+                    witnessUtxo: {
+                      script: Buffer.from(utxo.scriptPubKey, 'hex'),
+                      value: utxo.value
+                    }
+                  })
+                  // Send to self, no change output, remaining sats are treated as fee.
+                  psbt.addOutput({
+                    address,
+                    value: sendAmount
+                  })
+                  console.log('utxo', utxo)
+                  console.log('psbt', psbt.toHex())
+                  console.log('toSignInputs', [
+                    {
+                      index: 0,
+                      address
+                    }
+                  ])
+                  const unsignedPsbtHex = psbt.toHex()
+                  const signedPsbtHex = await btcProvider.signPsbt(unsignedPsbtHex, {
+                    autoFinalized: false,
+                    toSignInputs: [
+                      {
+                        index: 0,
+                        address
+                      }
+                    ]
+                  })
+                  console.log(
+                    'btc signPsbt self transfer (signed psbt hex)',
+                    signedPsbtHex
+                  )
+                } catch (e) {
+                  console.log(e)
+                }
+              }}
+            >
+              btc signPsbt(&quot;self transfer psbt&quot;)
+            </LodingButton>
+
+            <LodingButton
+              disabled={!btcIsConnect}
+              onClick={async () => {
+                try {
+                  const result = await providers.bitcoinProvider?.signPsbts(['psbt'])
+                  console.log('btc signPsbts', result)
+                } catch (e) {
+                  console.log(e)
+                }
+              }}
+            >
+              btc signPsbts(['psbt'])
             </LodingButton>
           </div>
           <StyleSetting {...props} />
